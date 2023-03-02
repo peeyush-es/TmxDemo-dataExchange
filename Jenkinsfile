@@ -11,28 +11,28 @@ pipeline {
         }
         stage("building images"){
             steps{
-                sh "sudo docker build --rm --no-cache -t TmxDemo-dataExchange-cron-es:r1 ." 
+                sh "sudo docker build --rm --no-cache -t tmxDemo-dataexchange-cron-es:r1 ." 
                 }
             }   
         stage("tagging imges"){       //25.00 time stamp
             steps{
-                sh  "sudo docker tag TmxDemo-dataExchange-cron-es:r1 $registry/TmxDemo-dataExchange-cron-es:r1 "
+                sh  "sudo docker tag tmxDemo-dataexchange-cron-es:r1 $registry/tmxDemo-dataexchange-cron-es:r1 "
                 }
             }
         stage("remove old docker image"){
             steps{
-                sh  "sudo docker image remove TmxDemo-dataExchange-cron-es:r1"
+                sh  "sudo docker image remove tmxDemo-dataexchange-cron-es:r1"
                 }
             }
         stage("image push"){
             steps{                    // account name/image name: version of the tah     
-                sh "sudo docker push $registry/TmxDemo-dataExchange-cron-es:r1"  
+                sh "sudo docker push $registry/tmxDemo-dataexchange-cron-es:r1"  
                 }
             }  
         stage("deploying images in DEV ENV"){
             steps{                    // account name/image name: version of the tah     
-                sh "sudo docker rm -f TmxDemo-dataExchange-cron-es"
-                sh "sudo docker run -d  --name TmxDemo-dataExchange-cron-es $registry/TmxDemo-dataExchange-cron-es:r1"  
+                sh "sudo docker rm -f tmxDemo-dataexchange-cron-es"
+                sh "sudo docker run -d  --name tmxDemo-dataexchange-cron-es $registry/tmxDemo-dataexchange-cron-es:r1"  
             }
         }
     }   
