@@ -32,7 +32,7 @@ pipeline {
         stage("deploying images in DEV ENV"){
             steps{                    // account name/image name: version of the tah     
                 sh "sudo docker rm -f TmxDemo-dataExchange-cron-es"
-                sh "sudo docker run -d -p 6121:6121 --name TmxDemo-dataExchange-cron-es $registry/TmxDemo-dataExchange-cron-es:r1"  
+                sh "sudo docker run -d  --name TmxDemo-dataExchange-cron-es $registry/TmxDemo-dataExchange-cron-es:r1"  
             }
         }
     }   

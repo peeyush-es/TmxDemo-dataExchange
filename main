@@ -1,2 +1,2 @@
 #!/bin/bash
-cron && tail -f /src/log/monit.txt
+cron && tail -f /src/log/shadow.log
