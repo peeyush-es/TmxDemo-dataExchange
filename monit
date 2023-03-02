@@ -1,0 +1,17 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+*/5 * * * *  root cd  /src && python cooling.py 1> /src/log/cooling.log  2>> /src/log/cooling_error.log
+
+*/5 * * * *  root cd  /src && python  chemicals.py 1> /src/log/che.log  2>> /src/log/che_error.log
+
+*/5 * * * *  root cd  /src && python heating.py 1> /src/log/heating.log  2>> /src/log/heating_error.log
+
+*/5 * * * *  root cd  /src && python WWS1.py 1> /src/log/W1.log  2>> /src/log/W1_error.log
+
+*/5 * * * *  root cd  /src && python WWS2.py 1> /src/log/W2.log  2>> /src/log/W2_error.log
+
+*/5 * * * *  root cd  /src && python WWS3.py 1> /src/log/W3.log  2>> /src/log/W3_error.log
+
+* * * * *  root cd  /src && python shadow.py 1> /src/log/shadow.log  2>> /src/log/shadow_error.log
+

@@ -1,0 +1,2 @@
+#!/bin/bash
+cron && tail -f /src/log/monit.txt
