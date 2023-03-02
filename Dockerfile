@@ -1,4 +1,5 @@
-FROM dev.exactspace.co/python3.8-base-es2:r1
+#FROM dev.exactspace.co/python3.8-base-es2:r1
+FROM dev.exactspace.co/python-base-es2:r1
 RUN apt-get update && apt-get -y install cron
 RUN mkdir -p /src/log
 COPY * /src/
