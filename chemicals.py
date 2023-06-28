@@ -7,12 +7,11 @@ import time
 import datetime
 from datetime import timedelta
 import numpy as np
-import timeseries as ts
-import app_config as cfg
+#import timeseries as ts
+# import app_config as cfg
 import paho.mqtt.client as paho
 import math as m
-import messaging as mg
-config = cfg.getconfig()
+# config = cfg.getconfig()
 global cross_tags
 from dataExchangelmpl import dataEx,config
 
@@ -39,10 +38,11 @@ print(currentDay,validDay,currentHour,currentMinute,last5Minute)
 
 unitsId = "61c0c2aab45a623b64fc3b0e"
 dataEx = dataEx()
-try:
-    dataEx.getLoginToken()
-except:
-    dataEx.getLoginToken()
+
+# try:
+    # dataEx.getLoginToken()
+# except:
+    # dataEx.getLoginToken()
 
 qb_df = dataEx.getTagmeta(unitsId)
 

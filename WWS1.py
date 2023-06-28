@@ -12,10 +12,10 @@ import time
 import datetime
 from datetime import timedelta
 import numpy as np
-import timeseries as ts
-import app_config as cfg
+#import timeseries as ts
+# import app_config as cfg
 # import paho.mqtt.client as paho
-config = cfg.getconfig()
+# config = cfg.getconfig()
 import os
 import time
 import datetime
