@@ -1,3 +1,5 @@
+import gevent.monkey
+gevent.monkey.patch_all()
 import requests
 from requests.exceptions import Timeout
 import pandas as pd

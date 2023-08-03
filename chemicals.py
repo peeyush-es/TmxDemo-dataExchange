@@ -49,7 +49,7 @@ qb_df = dataEx.getTagmeta(unitsId)
 fileNames = []
 for i in qb_df["dataTagId"]:
     fileNames.append(i + ".csv")
-    
+print(fileNames)
 dataEx.downloadingFileMultipleFiles(fileNames)
 for tag in qb_df["dataTagId"]:
     dataEx.dataExachangeChemicals([tag],validDay,currentHour,currentMinute,last5Minute,currentTimeStamp)

@@ -1,3 +1,6 @@
+import gevent.monkey
+gevent.monkey.patch_all()
+import warnings
 import requests
 from requests.exceptions import Timeout
 import pandas as pd
@@ -19,6 +22,7 @@ import paho.mqtt.client as paho
 import grequests
 config = cfg.getconfig()
 import sys
+import traceback
 
 class dataEx:
     def __init__(self):
@@ -31,13 +35,14 @@ class dataEx:
     def getTagmeta(self,unitsId):
         query = {"unitsId":unitsId}
         url = config["api"]["meta"] + '/tagmeta?filter={"where":' + json.dumps(query) + '}'
-
+        print(url)
         # response = requests.get(url,headers={"Authorization": self.token})
         response = requests.get(url)
         if(response.status_code==200):
             # print(response.status_code)
             # print("Got tagmeta successfully.....")
             tagmeta = json.loads(response.content)
+            
             df = pd.DataFrame(tagmeta)
         else:
             print("error in fetching tagmeta")
@@ -100,8 +105,8 @@ class dataEx:
       ],
       "plugins": [],
       "cache_time": 0,
-      "start_absolute": startTime,
-      "end_absolute": endTime
+      "start_absolute": int(startTime),
+      "end_absolute": int(endTime)
     }
         for tag in tagList:
             d['metrics'][0]['name'] = tag
@@ -353,44 +358,70 @@ class dataEx:
         if not noTag:
             maindf = self.getValuesV2(miniList,startTime,endTime)
         if noTag:
-            maindf = self.getValuesV2(miniList,1646092800000,1646093100000)
+            et = time.time() * 1000
+            st = et - 1*1000*60*20
+            maindf = self.getValuesV2(miniList,st,et)
+            if len(maindf) == 0:
+                df_LV = self.getLastValues(miniList)
+                # print(df_LV)
+                if len(df_LV) > 0:
+                    # print(self.now)
+                    endTime = df_LV.loc[0,'time']
+                    startTime = endTime - 1*1000*60*20
+                    maindf = self.getValuesV2(miniList,startTime,endTime)
+                    maindf.dropna(inplace=True)
+                    maindf = maindf[maindf[miniList[0]]!='NaN']
+                maindf.reset_index(drop=True,inplace=True)
+        print(maindf.columns)
         for tag in miniList:
-            df = maindf[["time",tag]]
-            df.dropna(how="any",inplace=True)
-            # print(df)
-            new_tag = tag.replace("CEN1","DUN")
-            # df.sort_values(by="time",inplace=True,ascending=False)
-            df = df.sort_values(by="time", ascending=False, ignore_index=True)
-            df.reset_index(inplace=True,drop=True)
             
-            # df['Date']=pd.to_datetime(df['time'],unit='ms',errors='coerce')
-            if len(df) == 0 and not noTag:
-                self.noDataTags.append(tag)
-            elif len(df)!= 0:
-                # df.sort_values(by="time",inplace=True,ascending=False)
-                df = df.sort_values(by="time", ascending=False, ignore_index=True)
-                df.reset_index(inplace=True,drop=True)
-                for i in df.index:
-                    df.at[i, 'newTime'] = self.now - i*1000*60
-                df['newDate']=pd.to_datetime(df['newTime'],unit='ms')
-                    
-                post_url = config["api"]["datapoints"]
-                post_array = []
-                for i in range(0,len(df)):
-                    if df.loc[i,tag] != None:
-                        post = [int(df.loc[i,'newTime']),float(df.loc[i,tag])]
-                        post_array.append(post)
-                        
-                post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
-                # print(post_body)
+            try:
                 try:
-                    res1 = requests.post(post_url,json=post_body)
-                    print("`"*30,str(new_tag),"`"*30)
-                    print("`"*30,str(res1.status_code),"`"*30)
+                    var = "time" 
+                    df = maindf[["time",tag]]
                 except:
-                    pass
-                # print(post_body)
+                    var = "Time"
+                    df = maindf[["Time",tag]]
+                    
+                df.dropna(how="any",inplace=True)
+                # print(df)
+      
+                    
+                new_tag = tag.replace("CEN1","DUN")
+                # df.sort_values(by="time",inplace=True,ascending=False)
+                # df = df.sort_values(by=var, ascending=False, ignore_index=True)
+                # df.reset_index(inplace=True,drop=True)
                 
+                # df['Date']=pd.to_datetime(df['time'],unit='ms',errors='coerce')
+                if len(df) == 0 and not noTag:
+                    self.noDataTags.append(tag)
+                if len(df)!= 0:
+                    
+                    # df.sort_values(bya="time",inplace=True,ascending=False)
+                    df = df.sort_values(by=var, ascending=False, ignore_index=True)
+                    df.reset_index(inplace=True,drop=True)
+                    for i in df.index:
+                        df.at[i, 'newTime'] = self.now - i*1000*60
+                    df['newDate']=pd.to_datetime(df['newTime'],unit='ms')
+                        
+                    post_url = config["api"]["datapoints"]
+                    post_array = []
+                    for i in range(0,len(df)):
+                        if df.loc[i,tag] != None:
+                            post = [int(df.loc[i,'newTime']),float(df.loc[i,tag])]
+                            post_array.append(post)
+                            
+                    post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
+                    # print(post_body)
+                    try:
+                        res1 = requests.post(post_url,json=post_body)
+                        print("`"*30,str(new_tag),"`"*30)
+                        print("`"*30,str(res1.status_code),"`"*30)
+                    except:
+                        print(traceback.format_exc())
+                    # print(post_body)
+            except:
+                print(traceback.format_exc())                
             
             
     def dataExachangeHeating(self,tagList,startTime,endTime):
@@ -401,6 +432,7 @@ class dataEx:
             self.dataexHeating(miniList,startTime,endTime)
             
         for ss in range(0,len(self.noDataTags),stepSize):
+            print(miniList)
             miniList = self.noDataTags[ss:ss+stepSize]
             self.dataexHeating(miniList,startTime,endTime,True)
             
