@@ -32,6 +32,10 @@ class dataEx:
         self.now = int(time.time()*1000) 
         
         
+    def getDateFromTimeStamp(self,timestamp):
+        return datetime.datetime.fromtimestamp(timestamp/1000)
+        
+        
     def getTagmeta(self,unitsId):
         query = {"unitsId":unitsId}
         url = config["api"]["meta"] + '/tagmeta?filter={"where":' + json.dumps(query) + '}'
@@ -177,8 +181,8 @@ class dataEx:
             "metrics":metrics,
             "plugins": [],
             "cache_time": 0,
-            "start_absolute": startTime,
-            "end_absolute": endTime
+            "start_absolute": int(startTime),
+            "end_absolute": int(endTime)
             
         }
     #     print(json.dumps(query,indent=4))
@@ -210,7 +214,7 @@ class dataEx:
             df.dropna(inplace=True)
             df = df[df[taglist[0]]!='NaN']
             df.reset_index(drop=True,inplace=True)
-            new_tag = taglist[0].replace('TJY','TTE')
+            new_tag = taglist[0].replace('VDM','TTE')
             print(new_tag)
             # print(df)
             post_array = []
@@ -240,7 +244,7 @@ class dataEx:
                     df.loc[i,'Time'] = self.now - i * 1000*60
                     
                 df['Date']=pd.to_datetime(df['Time'],unit='ms')
-                new_tag = taglist[0].replace('TJY','TTE')
+                new_tag = taglist[0].replace('VDM','TTE')
             
                 print(new_tag)
                     # print(df)
@@ -274,7 +278,7 @@ class dataEx:
                     df.loc[i,'Time'] = self.now - i * 1000*60
                     
                 df['Date']=pd.to_datetime(df['Time'],unit='ms')
-                new_tag = taglist[0].replace('CEN1','DUN')
+                new_tag = taglist[0].replace('VDM','TTE')
                 
                 print(new_tag)
                 # print(df)
@@ -290,15 +294,42 @@ class dataEx:
                 print('*******************',res1.status_code,new_tag,'******************************')
                 # print(df)
                 
-    def dataExachangeChemicals(self,taglist,validDay,currentHour,currentMinute,last5Minute,currentTimeStamp):
+    def backfillCooling(self,taglist):
+        print(taglist,"trying for backfill")
+        et = time.time() * 1000
+        et = 1691519400000
+        st = et - 1*1000*60*60*24*365
+        df = self.getValuesV2(taglist,st,et)
+        
+        df.dropna(inplace=True)
+        df = df[df[taglist[0]]!='NaN']
+        df.reset_index(drop=True,inplace=True)
+        print(df)
+        
+        if len(df) > 0:
+            new_tag = taglist[0].replace('VDM','TTE')
+            dataPointsReq = 5000
+            for i in range(0,len(df),dataPointsReq):
+                new_df =  df[["time",taglist[0]]][i:i+dataPointsReq]
+                
+                if len(new_df) > 0:
+                    post_array = new_df[["time",taglist[0]]].values.tolist()
+                    
+                post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
+                res1 = requests.post(self.post_url,json=post_body)
+                print('*******************',res1.status_code,new_tag,'******************************')
+
+          
+    def dataExachangeChemicals(self,taglist,validDay,currentHour,currentMinute,last5Minute,currentTimeStamp,df):
     #Get the valid Data
+        print("checking for tag",taglist)
         try:
-            df = pd.read_csv(taglist[0]+".csv")
+            # df = pd.read_csv(taglist[0]+".csv")
             df.dropna(axis=0,inplace=True)
             if len(df) >0:
                 new_tag = taglist[0].replace("QBX1_","SMR_")
                 # print(new_tag)
-                df['Date']=pd.to_datetime(df['Time'],unit='ms',errors='coerce')
+                # df['Date']=pd.to_datetime(df['Time'],unit='ms',errors='coerce')
                 
                 # print(df)
                 # print(df["Date"].isnull().sum())
@@ -327,11 +358,11 @@ class dataEx:
                 # print(valid_df)
                 
                 # valid_df.sort_values(by="Time",inplace=True,ascending=False)
-                valid_df = valid_df.sort_values(by="Time", ascending=False, ignore_index=True)
+                # valid_df = valid_df.sort_values(by="Time", ascending=False, ignore_index=True)
                 valid_df.reset_index(drop = True,inplace=True)
                 
                 for i in valid_df.index:
-                    valid_df.loc[i,'newTime'] = currentTimeStamp - i*1000*60
+                    valid_df.loc[i,'newTime'] = currentTimeStamp - i*1000
 
 
                 valid_df['newDate']=pd.to_datetime(valid_df['newTime'],unit='ms')
@@ -343,10 +374,12 @@ class dataEx:
                     if valid_df.loc[i,taglist[0]] != None:
                         post = [int(valid_df.loc[i,'newTime']),float(valid_df.loc[i,taglist[0]])]
                         post_array.append(post)
-                        
+                 
                 post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
                 res1 = requests.post(post_url,json=post_body)
                 # print(post_body)
+                print("`"*30,str(len(post_array)),"`"*30)
+
                 print("`"*30,str(new_tag),"`"*30)
                 print("`"*30,str(res1.status_code),"`"*30)
         except Exception as e:
@@ -366,13 +399,13 @@ class dataEx:
                 # print(df_LV)
                 if len(df_LV) > 0:
                     # print(self.now)
-                    endTime = df_LV.loc[0,'time']
+                    endTime = df_LV.loc[0,'time'] + 1*1000*60*5
                     startTime = endTime - 1*1000*60*20
                     maindf = self.getValuesV2(miniList,startTime,endTime)
                     maindf.dropna(inplace=True)
                     maindf = maindf[maindf[miniList[0]]!='NaN']
                 maindf.reset_index(drop=True,inplace=True)
-        print(maindf.columns)
+        print(maindf)
         for tag in miniList:
             
             try:
@@ -442,7 +475,7 @@ class dataEx:
         for file in fileNames:
             url = url = config['api']['meta']+"/attachments/reports/download/" +  file
             urls.append(url)
-            print(url)
+            # print(url)
             
         rs = (grequests.get(u) for u in urls)
         requests = grequests.map(rs)
@@ -452,8 +485,9 @@ class dataEx:
                 open(""+fileNames[i], "wb").write(requests[i].content)
                 print("Downloading completed for file " + str(fileNames[i]))
             else:
-                print(requests[i].status_code)
-                print(requests[i].content)
+                print("Downloading not completed for file " + str(fileNames[i]) , requests[i].status_code , )
+                # print()
+                # print(requests[i].content)
             
     def removeFiles(self,fileNames):
         for file in fileNames:

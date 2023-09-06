@@ -35,8 +35,17 @@ validMonth = currentMonth - (currentQuarter-1)*3
 startDate = "2022/{}/{} {}:{}:{}".format(validMonth,currentDay,currentHour,last5Minute,currentSecond)
 endDate = "2022/{}/{} {}:{}:{}".format(validMonth,currentDay,currentHour,currentMinute,currentSecond)
 
-startDate = datetime.datetime.strptime(startDate, '%Y/%m/%d %H:%M:%S')
-endDate = datetime.datetime.strptime(endDate, '%Y/%m/%d %H:%M:%S')
+print(startDate,endDate)
+try:
+    startDate = datetime.datetime.strptime(startDate, '%Y/%m/%d %H:%M:%S')
+    endDate = datetime.datetime.strptime(endDate, '%Y/%m/%d %H:%M:%S')
+except ValueError:
+    startDate = "2022/{}/{} {}:{}:{}".format(6,28,currentHour,last5Minute,currentSecond)
+    endDate = "2022/{}/{} {}:{}:{}".format(6,28,currentHour,currentMinute,currentSecond)
+    
+    startDate = datetime.datetime.strptime(startDate, '%Y/%m/%d %H:%M:%S')
+    endDate = datetime.datetime.strptime(endDate, '%Y/%m/%d %H:%M:%S')
+
 
 print(startDate,endDate)
 

@@ -27,13 +27,18 @@ currentMinute =  currentTime.minute
 currentSecond = currentTime.second
 last5Minute = currentMinute - 5
 
-if currentDay % 3 == 0:
-    validDay = 20
-elif currentDay % 3 == 1:
-    validDay = 19
-elif currentDay % 3 == 2:
-    validDay = 20
-    
+# if currentDay % 3 == 0:
+    # validDay = 20
+# elif currentDay % 3 == 1:
+    # validDay = 19
+# elif currentDay % 3 == 2:
+    # validDay = 20
+validDay =  6 
+if currentHour % 2 == 0:
+    currentHour = 1
+else:
+    currentHour = 0
+
 print(currentDay,validDay,currentHour,currentMinute,last5Minute)
 
 unitsId = "61c0c2aab45a623b64fc3b0e"
@@ -46,11 +51,13 @@ dataEx = dataEx()
 
 qb_df = dataEx.getTagmeta(unitsId)
 
-fileNames = []
-for i in qb_df["dataTagId"]:
-    fileNames.append(i + ".csv")
-print(fileNames)
+# fileNames = []
+# for i in qb_df["dataTagId"]:
+    # fileNames.append(i + ".csv")
+# print(fileNames)
+fileNames = ["tmx_chemicals_demo.csv"]
 dataEx.downloadingFileMultipleFiles(fileNames)
+maidf = pd.read_csv(fileNames[0],parse_dates=["Date"])
 for tag in qb_df["dataTagId"]:
-    dataEx.dataExachangeChemicals([tag],validDay,currentHour,currentMinute,last5Minute,currentTimeStamp)
-dataEx.removeFiles(fileNames)  
+    dataEx.dataExachangeChemicals([tag],validDay,currentHour,currentMinute,last5Minute,currentTimeStamp,maidf)
+#dataEx.removeFiles(fileNames)  

@@ -15,9 +15,12 @@ print(tag_df)
 for tag in range(0,len(tag_df)): 
     if 'VDM' in tag_df.loc[tag,'dataTagId']:
         taglist = [tag_df.loc[tag,'dataTagId']]
-        # taglist= ['CEN1_M24_R']
-        print(taglist)
+        # taglist= ['VDM_CHW_OUT_TEMP']
+        # print(taglist)
         try:
-            dataEx.dataExachangeCooling(taglist)
-        except:
-            pass
+            dataEx.backfillCooling(taglist)
+            # break
+        except Exception as e:
+            print(e)
+            
+        

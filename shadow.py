@@ -49,7 +49,7 @@ def getLastValues(taglist,end_absolute=0):
 
 
 _redis_data_ = {}
-cooling_df = getLastValues(["TJY_ABS_PMP_DO"])
+cooling_df = getLastValues(["TTE_STRN_SLN_CONC"])
 print(cooling_df)
 heating_df = getLastValues(["DUN_M24_T"])
 res = redis.set("62b4012d1bb30160b7ec85c9-shadow",float(cooling_df.loc[0,"time"]))
@@ -61,7 +61,7 @@ wws_df = getLastValues(["WWS1_BL_01"])
 res = redis.set("63288a244512494172eb0cde-shadow",float(wws_df.loc[0,"time"]))
 print(res)
 
-chemicals_df = getLastValues(["SMR_CORROSION"])
+chemicals_df = getLastValues(["SMR_TEMPERATURE"])
 
 res = redis.set("6328837c4512494172eb0c2d-shadow",float(chemicals_df.loc[0,"time"]))
 print(res)
