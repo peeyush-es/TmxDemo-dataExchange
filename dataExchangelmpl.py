@@ -187,6 +187,8 @@ class dataEx:
         }
     #     print(json.dumps(query,indent=4))
         res=requests.post(url=self.url_kairos, json=query)
+        if res.status_code != 200:
+            print(res.status_code)
         values=json.loads(res.content)
         finalDF = pd.DataFrame()
         for i in values["queries"]:
@@ -388,8 +390,10 @@ class dataEx:
             
             
     def dataexHeating(self,miniList,startTime,endTime,noTag=False):
+        exceptionsList = ["CEN1_BLR1_SFR_stmflw","CEN1_BLR1_FUEL_CONS_HRLY","CEN1_BLR1_STEAM_GEN_HRLY"]
         if not noTag:
             maindf = self.getValuesV2(miniList,startTime,endTime)
+            print(maindf)
         if noTag:
             et = time.time() * 1000
             st = et - 1*1000*60*20
@@ -405,6 +409,7 @@ class dataEx:
                     maindf.dropna(inplace=True)
                     maindf = maindf[maindf[miniList[0]]!='NaN']
                 maindf.reset_index(drop=True,inplace=True)
+                
         print(maindf)
         for tag in miniList:
             
@@ -426,10 +431,17 @@ class dataEx:
                 # df.reset_index(inplace=True,drop=True)
                 
                 # df['Date']=pd.to_datetime(df['time'],unit='ms',errors='coerce')
-                if len(df) == 0 and not noTag:
+                if len(df) == 0 and not noTag :
                     self.noDataTags.append(tag)
                 if len(df)!= 0:
-                    
+                    if (not df[tag].iloc[-1]) and (tag not in self.noDataTags):
+                        # print("having only zeros" * 100)
+                        self.noDataTags.append(tag)
+                        return
+                    if (tag in exceptionsList) and (not df[tag].iloc[-1]):
+                        print("in exc list")
+                        df = self.getValuesV2([tag],1678645800000,1678645800000 + 1*1000*60*5)
+                        return
                     # df.sort_values(bya="time",inplace=True,ascending=False)
                     df = df.sort_values(by=var, ascending=False, ignore_index=True)
                     df.reset_index(inplace=True,drop=True)

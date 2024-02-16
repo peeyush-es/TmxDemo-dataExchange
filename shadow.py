@@ -57,7 +57,7 @@ print(res)
 res = redis.set("62b3f0ae1bb30160b7ec8385-shadow",float(heating_df.loc[0,"time"]))
 print(res)
 
-wws_df = getLastValues(["WWS1_BL_01"])
+wws_df = getLastValues(["WWS3_K_101A_sts"])
 res = redis.set("63288a244512494172eb0cde-shadow",float(wws_df.loc[0,"time"]))
 print(res)
 

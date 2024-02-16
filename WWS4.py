@@ -18,23 +18,25 @@ import numpy as np
 import os
 import time
 import datetime
-from datetime import timedelta
 from dataExchangelmpl import dataEx,config
 
 
 currentTimeStamp = int(time.time()*1000)
-currentTime = datetime.datetime.now()
+currentTime = datetime.datetime.now() + datetime.timedelta(hours=10,minutes=30)
 currentHour = currentTime.hour
 currentMinute =  currentTime.minute
 currentSecond = currentTime.second
 last5Minute = currentMinute - 5
-validHour = currentHour - 3*(currentHour//3)
+
+validHour = currentHour % 3
+if validHour == 0:
+    validHour = 12
 
 
-fileName = "UF RO_data dump for Demo site.xlsx"
+fileName = "WWS4.csv"
 
-dataEx().downloadingFileMultipleFiles([fileName])
-df = pd.read_excel(fileName)
+# dataEx().downloadingFileMultipleFiles([fileName])
+df = pd.read_csv(fileName)
 print(df)
 
 df.drop(["description"],axis=1,inplace=True)
@@ -47,20 +49,19 @@ df.reset_index(inplace=True)
 
 df.rename(columns = {"index":"time"},inplace=True)
 
-
+# print(df["time"].str[:7])
+df["time"] = df["time"].str[:7]
 df["time"]=pd.to_datetime(df['time'],format="%H:%M:%S")
 
 df['Hour'] = df['time'].dt.hour
 df['Minute'] = df['time'].dt.minute
 
 
-df
 
-
+print(currentHour,validHour,last5Minute,currentMinute)
 valid_df = df[(df['Hour'] == validHour) &  (df["Minute"] > last5Minute) & (df["Minute"] <= currentMinute)]
 if len(valid_df) < 1:
     valid_df = df[:5]
-
 
 count = len(valid_df) -1
 for i in valid_df.index:
@@ -83,7 +84,7 @@ for col in valid_df.columns:
         res1 = requests.post(post_url,json=post_body)
         print(res1.status_code)
 
-dataEx().removeFiles([fileName])
+# dataEx().removeFiles([fileName])
 
 
 
