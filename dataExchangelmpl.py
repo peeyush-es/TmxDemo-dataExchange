@@ -24,6 +24,10 @@ config = cfg.getconfig()
 import sys
 import traceback
 
+def tr():
+    print(traceback.format_exc())
+
+
 class dataEx:
     def __init__(self):
         self.url_kairos = "https://pulse.thermaxglobal.com/kairosapi/api/v1/datapoints/query"
@@ -53,7 +57,41 @@ class dataEx:
             df = pd.DataFrame()
         return df
         
-        
+    
+    def getForms(self,unitsId):
+        try:
+            urlQuery = config["api"]["meta"] + "/units/" + unitsId + "/forms"
+            print(urlQuery)
+            response = requests.get(urlQuery)
+            if(response.status_code==200):
+                # print(response.status_code)
+                # print("Got tagmeta successfully.....")
+                tagmeta = json.loads(response.content)
+                # print(tagmeta[0]["fields"])
+                df = pd.DataFrame(tagmeta[0]["fields"])
+            else:
+                print("error in fetching tagmeta")
+                df = pd.DataFrame()
+            return df
+        except:
+            tr()
+      
+    
+    def createBodyForForms(self,formBody):
+        try:
+            returnLst = []
+            for i in formBody:
+                if "fields" in i.keys():
+                    for feild in i["fields"]:
+                        body = {}
+                        body["dataTagId"] = feild["dataTagId"]
+                        returnLst.append(body)
+            # print(returnLst)
+            return returnLst
+        except:
+            tr()
+    
+    
     def getLoginToken(self):
         url = "https://pulse.thermaxglobal.com/exactapi/Users/login"
         res= requests.post(url,json={"email":"rohit.r@exactspace.co","password":"Thermax@123","ttl":0})
@@ -204,7 +242,8 @@ class dataEx:
             
         finalDF.reset_index(inplace=True)
         return finalDF
-        
+
+
     def dataExachangeCooling(self,taglist):
         try:
             df = self.get5MinValues(taglist)
@@ -229,7 +268,7 @@ class dataEx:
             res1 = requests.post(self.post_url,json=post_body)
             # print(post_body)
             print('*******************',res1.status_code,new_tag,'******************************')
-            # print(df)
+            print(df)
         else:
             df_LV = self.getLastValues(taglist)
             # print(df_LV)
@@ -259,13 +298,13 @@ class dataEx:
                         except:
                             post = [int(df.loc[i,'Time']),float(0)]
                             post_array.append(post)
-                            
+                        
                 # print(len(df),len(post_array))
                 post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
                 res1 = requests.post(self.post_url,json=post_body)
-                # print(post_body)
+                print(post_body)
                 print('*******************',res1.status_code,new_tag,'******************************')
-                # print(df)
+                print(df)
             else:
                 # print(self.now)
                 endTime = 1659466200000
@@ -283,7 +322,7 @@ class dataEx:
                 new_tag = taglist[0].replace('VDM','TTE')
                 
                 print(new_tag)
-                # print(df)
+                print(df)
                 post_array = []
                 for i in range(0,len(df)):
                     if df.loc[i,taglist[0]] != None:
@@ -296,20 +335,143 @@ class dataEx:
                 print('*******************',res1.status_code,new_tag,'******************************')
                 # print(df)
                 
-    def backfillCooling(self,taglist):
+        
+    def dataExachangeWWSWithoutCSV(self,taglist):
+        try:
+            df = self.get5MinValues(taglist)
+        except:
+            df = pd.DataFrame()
+            
+        if len(df) > 0 and df[taglist[0]].mean() >0:
+            #print "HERE"
+            df.dropna(inplace=True)
+            df = df[df[taglist[0]]!='NaN']
+            df.reset_index(drop=True,inplace=True)
+            new_tag = taglist[0].replace('VDM','TTE')
+            print(new_tag)
+            # print(df)
+            post_array = []
+            for i in range(0,len(df)):
+                if df.loc[i,taglist[0]] != None:
+                    post = [int(df.loc[i,'Time']),float(df.loc[i,taglist[0]])]
+                    post_array.append(post)
+            # print(len(df),len(post_array))
+            post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
+            res1 = requests.post(self.post_url,json=post_body)
+            # print(post_body)
+            print('*******************',res1.status_code,new_tag,'******************************')
+            print(df)
+        else:
+            df_LV = self.getLastValues(taglist)
+            # print(df_LV)
+            if len(df_LV) > 0 and df_LV.loc[0,taglist[0]] > 0:
+                # print(self.now)
+                endTime = df_LV.loc[0,'time']
+                startTime = endTime - 1*1000*60*20
+                df = self.getValues(taglist,startTime,endTime)
+                df.dropna(inplace=True)
+                df = df[df[taglist[0]]!='NaN']
+                df.reset_index(drop=True,inplace=True)
+
+                for i in range(0,len(df)):
+                    df.loc[i,'Time'] = self.now - i * 1000*60
+                    
+                df['Date']=pd.to_datetime(df['Time'],unit='ms')
+                new_tag = taglist[0].replace('VDM','TTE')
+            
+                print(new_tag)
+                    # print(df)
+                post_array = []
+                for i in range(0,len(df)):
+                    if df.loc[i,taglist[0]] != None:
+                        try:
+                            post = [int(df.loc[i,'Time']),float(df.loc[i,taglist[0]])]
+                            post_array.append(post)
+                        except:
+                            post = [int(df.loc[i,'Time']),float(0)]
+                            post_array.append(post)
+                        
+                # print(len(df),len(post_array))
+                post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
+                res1 = requests.post(self.post_url,json=post_body)
+                print(post_body)
+                print('*******************',res1.status_code,new_tag,'******************************')
+                print(df)
+            else:
+                # print(self.now)
+                endTime = 1708454460000
+                startTime = 1708453800000
+                df = self.getValues(taglist,startTime,endTime)
+                # print(df)
+                df.dropna(inplace=True)
+                df = df[df[taglist[0]]!='NaN']
+                df.reset_index(drop=True,inplace=True)
+
+                for i in range(0,len(df)):
+                    df.loc[i,'Time'] = self.now - i * 1000*60
+                    
+                df['Date']=pd.to_datetime(df['Time'],unit='ms')
+                new_tag = taglist[0].replace('VDM','TTE')
+                
+                print(new_tag)
+                print(df)
+                post_array = []
+                for i in range(0,len(df)):
+                    if df.loc[i,taglist[0]] != None:
+                        post = [int(df.loc[i,'Time']),float(df.loc[i,taglist[0]])]
+                        post_array.append(post)
+                # print(len(df),len(post_array))
+                post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
+                res1 = requests.post(self.post_url,json=post_body)
+                # print(post_body)
+                print('*******************',res1.status_code,new_tag,'******************************')
+                # print(df)
+    
+      
+    def deleteKairos(self,taglist,startTime,endTime):
+        try:
+            query = {}
+            query["metrics"] = []
+            for metric in taglist:
+                query["metrics"].append({"name":metric})
+            
+            query["start_absolute"] = startTime
+            query["end_absolute"] = endTime
+            
+            # print(json.dumps(query,indent=4))
+            
+            url = config["api"]["datapoints"] + "/delete"
+            res = requests.post(url, json=query)
+            
+            if res.status_code == 200 or res.status_code == 204:
+                print("deleting successful...")
+            else:
+                print("deleting unsuccessful",res.status_code)
+        except:
+            tr()
+            
+  
+                
+    def backfillCooling(self,taglist,sourcePrefix,destPrefix):
+        
         print(taglist,"trying for backfill")
         et = time.time() * 1000
-        et = 1691519400000
-        st = et - 1*1000*60*60*24*365
+        # et = 1691519400000
+        st = et - 1*1000*60*60*24*7
         df = self.getValuesV2(taglist,st,et)
         
+
         df.dropna(inplace=True)
         df = df[df[taglist[0]]!='NaN']
         df.reset_index(drop=True,inplace=True)
-        print(df)
+        # print(df)
         
         if len(df) > 0:
-            new_tag = taglist[0].replace('VDM','TTE')
+            #yes, prefix at source is SIK_ , demo has YYM_
+            new_tag = taglist[0].replace(sourcePrefix,destPrefix)
+            print(new_tag)
+            
+            self.deleteKairos([new_tag],st,et)
             dataPointsReq = 5000
             for i in range(0,len(df),dataPointsReq):
                 new_df =  df[["time",taglist[0]]][i:i+dataPointsReq]
@@ -318,6 +480,7 @@ class dataEx:
                     post_array = new_df[["time",taglist[0]]].values.tolist()
                     
                 post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
+                # print(post_body)
                 res1 = requests.post(self.post_url,json=post_body)
                 print('*******************',res1.status_code,new_tag,'******************************')
 
@@ -390,7 +553,7 @@ class dataEx:
             
             
     def dataexHeating(self,miniList,startTime,endTime,noTag=False):
-        exceptionsList = ["CEN1_BLR1_SFR_stmflw","CEN1_BLR1_FUEL_CONS_HRLY","CEN1_BLR1_STEAM_GEN_HRLY"]
+        exceptionsList = []
         if not noTag:
             maindf = self.getValuesV2(miniList,startTime,endTime)
             print(maindf)
@@ -409,7 +572,7 @@ class dataEx:
                     maindf.dropna(inplace=True)
                     maindf = maindf[maindf[miniList[0]]!='NaN']
                 maindf.reset_index(drop=True,inplace=True)
-                
+        maindf.rename(columns={"index":"time"},inplace=True)
         print(maindf)
         for tag in miniList:
             
@@ -425,23 +588,24 @@ class dataEx:
                 # print(df)
       
                     
-                new_tag = tag.replace("CEN1","DUN")
+                new_tag = tag
                 # df.sort_values(by="time",inplace=True,ascending=False)
                 # df = df.sort_values(by=var, ascending=False, ignore_index=True)
                 # df.reset_index(inplace=True,drop=True)
                 
                 # df['Date']=pd.to_datetime(df['time'],unit='ms',errors='coerce')
                 if len(df) == 0 and not noTag :
+                    print("No data for ", tag)
                     self.noDataTags.append(tag)
                 if len(df)!= 0:
-                    if (not df[tag].iloc[-1]) and (tag not in self.noDataTags):
-                        # print("having only zeros" * 100)
-                        self.noDataTags.append(tag)
-                        return
+                    # if (not df[tag].iloc[-1]) and (tag not in self.noDataTags):
+                    #     # print("having only zeros" * 100)
+                    #     self.noDataTags.append(tag)
+                    #     #return
                     if (tag in exceptionsList) and (not df[tag].iloc[-1]):
                         print("in exc list")
                         df = self.getValuesV2([tag],1678645800000,1678645800000 + 1*1000*60*5)
-                        return
+                        #return
                     # df.sort_values(bya="time",inplace=True,ascending=False)
                     df = df.sort_values(by=var, ascending=False, ignore_index=True)
                     df.reset_index(inplace=True,drop=True)
@@ -457,7 +621,13 @@ class dataEx:
                             post_array.append(post)
                             
                     post_body = [{"name":new_tag,"datapoints":post_array,"tags": {"type":"derived"}}]
-                    # print(post_body)
+
+                    if self.unitsId:
+                        topicLine = f"u/{self.unitsId}/{new_tag}/r"
+                        pb = {"v":post_array[0][1],"t":post_array[0][0]}
+                        self.client.publish(topicLine,json.dumps(pb))
+
+                        
                     try:
                         res1 = requests.post(post_url,json=post_body)
                         print("`"*30,str(new_tag),"`"*30)
@@ -469,7 +639,12 @@ class dataEx:
                 print(traceback.format_exc())                
             
             
-    def dataExachangeHeating(self,tagList,startTime,endTime):
+    def dataExachangeHeating(self,tagList,startTime,endTime,client = False,unitsId=False):
+
+        if unitsId:
+            self.client = client
+            self.unitsId = unitsId
+
         stepSize = 20
         self.noDataTags = []
         for ss in range(0,len(tagList),stepSize):

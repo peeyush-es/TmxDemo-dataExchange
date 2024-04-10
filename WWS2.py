@@ -28,7 +28,7 @@ fileName = "PASSCO_INCINERATOR Random data.xlsx"
 
 dataEx().downloadingFileMultipleFiles([fileName])
 
-df = pd.read_excel(fileName)
+df = pd.read_excel(fileName,engine="openpyxl")
 df.drop(["description"],axis=1,inplace=True)
 
 

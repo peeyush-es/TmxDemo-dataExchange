@@ -36,7 +36,7 @@ validHour = currentHour - 6*(currentHour//6)
 fileName = "MVR_DATA Dump.xlsx"
 
 dataEx().downloadingFileMultipleFiles([fileName])
-df = pd.read_excel(fileName)
+df = pd.read_excel(fileName,engine="openpyxl")
 df
 
 df.drop(["description",'Unnamed: 2'],axis=1,inplace=True)

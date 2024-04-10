@@ -34,7 +34,7 @@ validHour = currentHour - 3*(currentHour//3)
 fileName = "UF RO_data dump for Demo site.xlsx"
 
 dataEx().downloadingFileMultipleFiles([fileName])
-df = pd.read_excel(fileName)
+df = pd.read_excel(fileName,engine="openpyxl")
 print(df)
 
 df.drop(["description"],axis=1,inplace=True)

@@ -66,9 +66,15 @@ chemicals_df = getLastValues(["SMR_TEMPERATURE"])
 res = redis.set("6328837c4512494172eb0c2d-shadow",float(chemicals_df.loc[0,"time"]))
 print(res)
 
+power_df = getLastValues(["YYM_11_TI_001D"])
+
+res = redis.set("65cdb12fd958e80007254cf3-shadow",float(power_df.loc[0,"time"]))
+print(res)
+
 try:
     print("shadow")
-    keys = ["62b3f0ae1bb30160b7ec8385-shadow","62b4012d1bb30160b7ec85c9-shadow","63288a244512494172eb0cde-shadow","6328837c4512494172eb0c2d-shadow"]
+    keys = ["62b3f0ae1bb30160b7ec8385-shadow","62b4012d1bb30160b7ec85c9-shadow","63288a244512494172eb0cde-shadow",
+            "6328837c4512494172eb0c2d-shadow","65cdb12fd958e80007254cf3-shadow"]
 
 # print(len(keys))
     if len(keys) <= 120:
